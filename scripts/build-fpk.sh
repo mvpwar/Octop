@@ -17,7 +17,7 @@
 #                    例如 FPK_ITER=01 会生成 ...-<ver>-01.fpk（通常不需要，按版本号发布）
 #
 # 说明：
-#   - Linux CI 下会自动下载 fnpack-1.2.3-linux-amd64；
+#   - Linux CI 下会自动下载 fnpack-1.2.3-linux-arm；
 #   - 本地若已存在 .verify/fnpack(.exe) 则直接复用，不再联网下载。
 #   - 版本号同时来自仓库根 pyproject.toml，并注入到 manifest 的 version 字段
 #     （manifest 采用 key=value 无空格格式，故用 `^version=` 匹配）。
@@ -60,9 +60,9 @@ elif [ -x "$ROOT/.verify/fnpack" ]; then
 else
   OS="$(uname -s)"
   case "$OS" in
-    Linux)  FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-amd64" ;;
-    Darwin) FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-darwin-amd64" ;;
-    *)      FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-windows-amd64" ;;
+    Linux)  FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-arm" ;;
+    Darwin) FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-darwin-arm" ;;
+    *)      FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-windows-arm" ;;
   esac
   FNPACK="$TMP/fnpack"
   echo "[build-fpk] 下载 fnpack: $FNPACK_URL"
