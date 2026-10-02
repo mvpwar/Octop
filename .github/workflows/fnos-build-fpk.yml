@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       version: ${{ steps.ver.outputs.version }}
       tag: ${{ steps.ver.outputs.tag }}
@@ -84,7 +84,7 @@ jobs:
   # 复用 docker-publish 已推送的镜像，不在此重新 build/push。
   ensure-image:
     needs: version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -118,7 +118,7 @@ jobs:
 
   fpk:
     needs: [ensure-image, version]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
         with:
@@ -141,7 +141,7 @@ jobs:
     # 即使原生版构建失败也不阻塞整体发布：Docker 版（fpk）始终会发布。
     continue-on-error: true
     needs: version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       native_ok: ${{ steps.build_native.outcome == 'success' && steps.upload_native.outcome == 'success' }}
     steps:
@@ -257,7 +257,7 @@ jobs:
     # 即使原生版失败（continue-on-error）也要发布 Docker 版。
     if: always()
     needs: [fpk, native, version]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
         with:
