@@ -44,25 +44,42 @@ jobs:
 
       - name: Read version and image name
         id: ver
+        shell: bash
         run: |
-          # Same as octop-desktop.yml: keep full PEP 440 (e.g. 1.0.2b1), not digits-only.
-          VER=$(sed -nE 's/^version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' pyproject.toml | head -1)
-          if [ -z "$VER" ]; then
-            echo "::error::Failed to parse version from pyproject.toml"
+          set -euo pipefail
+
+          # Prefer GITHUB_REF_NAME if this is triggered from a tag push
+          if [[ -n "${GITHUB_REF_NAME:-}" && "${GITHUB_REF_NAME}" == v* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            # Otherwise, get the latest v* tag from git
+            TAG="$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || true)"
+          fi
+
+          if [[ -z "${TAG:-}" ]]; then
+            echo "::error::No v* tag found in this checkout; run this workflow from a release tag or after Release created the tag."
             exit 1
           fi
+
+          VER="${TAG#v}"
+          if [[ -z "$VER" ]]; then
+            echo "::error::Failed to extract version from tag $TAG"
+            exit 1
+          fi
+
           case "$VER" in
             *[[:space:]]*|*[\"\']*)
               echo "::error::Parsed version looks invalid: ${VER}"
               exit 1
               ;;
           esac
+
           IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
           echo "version=$VER" >> "$GITHUB_OUTPUT"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
-          echo "tag=v${VER}" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "pkg_ver=${VER}" >> "$GITHUB_OUTPUT"
-          echo "[version] VER=$VER, TAG=v${VER}"
+          echo "[version] VER=$VER, TAG=$TAG (source: git tag)"
 
   # 复用 docker-publish 已推送的镜像，不在此重新 build/push。
   ensure-image:
