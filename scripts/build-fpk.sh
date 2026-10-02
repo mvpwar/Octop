@@ -14,10 +14,10 @@
 #   FPK_NAME_PREFIX  输出文件名前缀，默认 "octop"
 #                    例如 FPK_NAME_PREFIX=Octop-fnos 会生成 Octop-fnos-docker-<ver>.fpk / Octop-fnos-native-<ver>.fpk
 #   FPK_ITER         迭代号，默认空
-#                    例如 FPK_ITER=01 会生成 ...-<ver>-01.fpk（通常不需要，按版本号发布）
+#                    例如 FPK_ITER=01 会生成 ...-<ver>-01.fpk（通���不需要，按版本号发布）
 #
 # 说明：
-#   - Linux CI 下会自动下载 fnpack-1.2.3-linux-arm；
+#   - Linux CI 下会自动下载 fnpack 对应的二进制（根据实际 CPU 架构：x86_64 或 arm）；
 #   - 本地若已存在 .verify/fnpack(.exe) 则直接复用，不再联网下载。
 #   - 版本号同时来自仓库根 pyproject.toml，并注入到 manifest 的 version 字段
 #     （manifest 采用 key=value 无空格格式，故用 `^version=` 匹配）。
@@ -59,12 +59,45 @@ elif [ -x "$ROOT/.verify/fnpack" ]; then
   FNPACK="$ROOT/.verify/fnpack"
 else
   OS="$(uname -s)"
+  ARCH="$(uname -m)"
+
+  # 根据操作系统和 CPU 架构确定下载 URL
   case "$OS" in
-    Linux)  FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-arm" ;;
-    Darwin) FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-darwin-arm" ;;
-    *)      FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-windows-arm" ;;
+    Linux)
+      case "$ARCH" in
+        x86_64|amd64)
+          FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-x86_64"
+          ;;
+        aarch64|arm64)
+          FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-arm"
+          ;;
+        *)
+          echo "[build-fpk] 不支持的架构: $ARCH"
+          exit 1
+          ;;
+      esac
+      ;;
+    Darwin)
+      case "$ARCH" in
+        x86_64|amd64)
+          FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-darwin-x86_64"
+          ;;
+        arm64|aarch64)
+          FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-darwin-arm"
+          ;;
+        *)
+          echo "[build-fpk] 不支持的架构: $ARCH"
+          exit 1
+          ;;
+      esac
+      ;;
+    *)
+      FNPACK_URL="https://static2.fnnas.com/fnpack/fnpack-1.2.3-windows-arm"
+      ;;
   esac
+
   FNPACK="$TMP/fnpack"
+  echo "[build-fpk] 检测到: OS=$OS, ARCH=$ARCH"
   echo "[build-fpk] 下载 fnpack: $FNPACK_URL"
   curl -fsSL -o "$FNPACK" "$FNPACK_URL"
   chmod +x "$FNPACK"
